@@ -26,6 +26,7 @@ export interface ForecastDay {
   weatherCode: number | null; // Código WMO da condição diária.
   minTemperatureC: number | null; // Temperatura mínima normalizada para Celsius.
   maxTemperatureC: number | null; // Temperatura máxima normalizada para Celsius.
+  precipitationProbabilityPct: number | null; // daily.precipitation_probability_max, em porcentagem.
 }
 
 export interface WeatherData {
