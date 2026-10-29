@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { ForecastDay, Unit } from '../types/weather';
 import ForecastCard from './ForecastCard';
 
@@ -7,15 +8,17 @@ interface ForecastListProps {
 }
 
 export default function ForecastList({ days, unit }: ForecastListProps) {
+  const headingId = useId();
+
   return (
-    <section aria-labelledby="forecast-heading">
-      <h2 id="forecast-heading" className="mb-4 text-lg font-semibold text-white">
+    <section aria-labelledby={headingId}>
+      <h2 id={headingId} className="mb-4 text-lg font-semibold text-white">
         Previsão de cinco dias
       </h2>
       {days.length === 0 ? (
         <p
           role="status"
-          className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/70"
+          className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/80"
         >
           Previsão indisponível.
         </p>

@@ -13,7 +13,7 @@ export default function UnitToggle({ unit, onChange }: UnitToggleProps) {
     <div
       role="group"
       aria-label="Unidade de temperatura"
-      className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 p-1 backdrop-blur-md"
+      className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-white/5 p-1 backdrop-blur-md"
     >
       <button
         type="button"
@@ -22,7 +22,7 @@ export default function UnitToggle({ unit, onChange }: UnitToggleProps) {
         onClick={() => onChange('celsius')}
         className={`${buttonBaseClassName} ${
           unit === 'celsius'
-            ? 'bg-accent-500 text-white shadow-sm'
+            ? 'bg-accent-400 text-night-900 shadow-sm'
             : 'text-white/70 hover:bg-white/10 hover:text-white'
         }`}
       >
@@ -35,7 +35,7 @@ export default function UnitToggle({ unit, onChange }: UnitToggleProps) {
         onClick={() => onChange('fahrenheit')}
         className={`${buttonBaseClassName} ${
           unit === 'fahrenheit'
-            ? 'bg-accent-500 text-white shadow-sm'
+            ? 'bg-accent-400 text-night-900 shadow-sm'
             : 'text-white/70 hover:bg-white/10 hover:text-white'
         }`}
       >

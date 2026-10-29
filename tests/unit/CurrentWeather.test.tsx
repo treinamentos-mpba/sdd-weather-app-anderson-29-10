@@ -14,7 +14,7 @@ describe('CurrentWeather', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'São Paulo' })).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Nublado' })).toBeInTheDocument();
+    expect(screen.getByText('Nublado')).toBeInTheDocument();
     expect(screen.getByText('22 °C')).toBeInTheDocument();
     expect(screen.getByText('64%')).toBeInTheDocument();
     expect(screen.getByText('14,4 km/h')).toBeInTheDocument();

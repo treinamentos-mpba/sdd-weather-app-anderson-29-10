@@ -10,7 +10,7 @@ describe('ForecastList', () => {
     expect(screen.getByRole('region', { name: 'Previsão de cinco dias' })).toBeInTheDocument();
     expect(screen.getAllByRole('article')).toHaveLength(5);
     expect(screen.getByText(/29 de out/)).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Nublado' })).toBeInTheDocument();
+    expect(screen.getByText('Nublado')).toBeInTheDocument();
     expect(screen.getByText('26 °C')).toBeInTheDocument();
     expect(screen.getByText('18 °C')).toBeInTheDocument();
     expect(screen.getByText('30%')).toBeInTheDocument();

@@ -38,7 +38,7 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
       role="search"
       aria-label="Buscar cidade"
       onSubmit={handleSubmit}
-      className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-md sm:flex-row sm:items-end"
+      className="flex flex-col gap-3 rounded-lg border border-white/10 bg-white/5 p-4 backdrop-blur-md sm:flex-row sm:items-end"
     >
       <div className="min-w-0 flex-1">
         <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-white/85">
@@ -53,7 +53,7 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
           aria-invalid={hasEmptyError || undefined}
           aria-describedby={hasEmptyError ? errorId : undefined}
           placeholder="Ex.: São Paulo"
-          className="h-11 w-full rounded-lg border border-white/10 bg-night-800/80 px-3 text-base text-white placeholder:text-white/45 focus-visible:border-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400/70 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-11 w-full rounded-lg border border-white/20 bg-night-800/80 px-3 text-base text-white placeholder:text-white/65 focus-visible:border-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400/70 disabled:cursor-not-allowed disabled:opacity-60"
         />
         {hasEmptyError && (
           <p id={errorId} role="alert" className="mt-1.5 text-sm text-red-300">
@@ -64,7 +64,7 @@ export default function SearchBar({ onSearch, disabled = false }: SearchBarProps
       <button
         type="submit"
         disabled={disabled}
-        className="h-11 rounded-lg bg-accent-500 px-5 font-semibold text-white transition-colors hover:bg-accent-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-night-900 disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-11 rounded-lg bg-accent-400 px-5 font-semibold text-night-900 transition-colors hover:bg-accent-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-400 focus-visible:ring-offset-2 focus-visible:ring-offset-night-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         Buscar
       </button>
