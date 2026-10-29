@@ -125,6 +125,35 @@ interface WeatherService {
 7. A UI apresenta cidade, dados atuais, horário e cinco datas. `UnitToggle` altera somente a unidade de apresentação; não provoca nova chamada.
 8. Em erro, manter a cidade e os parâmetros da operação para que “Tentar novamente” repita a mesma chamada. Não persistir seleção ou unidade após encerrar/recarregar a página.
 
+```mermaid
+flowchart TD
+  A[Pessoa digita e envia a cidade] --> B{Entrada válida?}
+  B -- Não --> C[UI mostra validação; sem chamada]
+  C --> A
+  B -- Sim --> D[useWeather: search loading]
+  D --> E[weatherService.searchCities]
+  E --> F[Open-Meteo Geocoding]
+  F -- Erro de rede, API, timeout ou JSON inválido --> G[useWeather: search error]
+  G --> H[UI mostra erro e ação de retry]
+  H --> E
+  F -- Resposta válida sem resultados --> I[useWeather: search empty]
+  I --> J[UI mostra estado vazio]
+  J --> A
+  F -- Resultados --> K[useWeather: search success]
+  K --> L[UI mostra opções de cidade]
+  L --> M[Pessoa seleciona uma cidade]
+  M --> N[useWeather: forecast loading]
+  N --> O[weatherService.getWeather]
+  O --> P[Open-Meteo Forecast]
+  P -- Erro de rede, API, timeout ou JSON inválido --> Q[useWeather: forecast error]
+  Q --> R[UI mostra erro e ação de retry]
+  R --> O
+  P -- Resposta válida --> S[useWeather: forecast success]
+  P -- Dados válidos incompletos --> T[useWeather: success partial]
+  S --> U[Componentes UI renderizam clima e previsão]
+  T --> U
+```
+
 ## External APIs
 
 ### Geocoding
@@ -229,24 +258,26 @@ O hook cancela requests superadas com `AbortController` e ignora respostas tardi
 
 ## Testing Strategy
 
-- **`lib` (unitários):** testar conversão e arredondamento sem React ou rede; passar timezone explicitamente para testar formatação de datas; testar cada código WMO e fallback desconhecido. Funções puras recebem entradas e permitem assertar saídas sem mocks.
-- **`services` (contrato):** mockar `fetch` para testar URL/parâmetros, transformação do JSON, resultado vazio, resposta parcial, JSON inválido, HTTP não-2xx, timeout e cancelamento. Isso verifica a fronteira Open-Meteo sem depender da API pública.
-- **`hooks` (orquestração):** injetar/mockar `WeatherService` para testar transições de estado, seleção, retry e ausência de chamadas para input vazio. Os testes não precisam conhecer a estrutura da resposta externa.
-- **`components` (apresentação):** renderizar com props/handlers controlados e verificar texto, acessibilidade e eventos; não mockar rede nem testar detalhes internos do hook.
-- **Integração/App:** validar que o hook conecta serviço e UI; manter os mocks no limite do serviço para cobrir o fluxo completo de busca, cidade selecionada, clima, previsão e unidade.
-- **E2E:** cobrir fluxo principal de busca, seleção, consulta, alternância e retry usando respostas mockadas determinísticas; não depender da disponibilidade da API pública no CI.
-- **Qualidade:** `pnpm lint`, `pnpm build`, `pnpm test` e `pnpm test:e2e`. Validar acessibilidade automatizada quando uma ferramenta aprovada for definida e complementar com revisão por teclado/leitor de tela.
-- A matriz de navegadores e o p95 de produção dependem de aprovação dos NFRs; Playwright local não substitui sondas de disponibilidade e medição real com a Open-Meteo.
+- **Vitest — `lib`:** cobrir temperaturas positivas, zero e negativas; conversão C/F; arredondamento ao inteiro mais próximo; formatação pt-BR com timezone fornecido; datas próximas à meia-noite/DST; códigos WMO conhecidos e desconhecidos. São testes puros, sem DOM, rede ou mocks.
+- **Vitest — `services`:** usar `vi.stubGlobal('fetch', ...)` ou mock equivalente. Verificar URLs e parâmetros de geocoding/forecast, encoding de acentos, mapeamento para tipos internos, arrays alinhados por índice, resposta sem resultados, campos parciais, JSON inválido, HTTP não-2xx/429, rejeição de rede, timeout e abort. Nenhum teste unitário chama Open-Meteo real.
+- **Vitest — `hooks`:** fornecer `WeatherService` mockado e testar transições de busca/forecast, seleção explícita, retry da mesma operação, resposta obsoleta/cancelada ignorada, unidade inicial Celsius e ausência de nova chamada ao alternar unidade.
+- **Vitest + Testing Library — componentes:** testar estados `loading`, `error`, `empty` e `success` de forma isolada. Verificar mensagem e retry em erro, ausência de resultados, clima/previsão em sucesso, indisponibilidade para campos ausentes, busca vazia sem chamada, interação por teclado, labels e anúncio dos estados. Usar `user-event`; não testar detalhes internos de implementação.
+- **Vitest — integração de `App`:** mockar apenas a fronteira `WeatherService` e percorrer busca, escolha de cidade, carregamento, clima, previsão e troca de unidade; confirmar que a conversão ocorre sem chamada adicional.
+- **Playwright — E2E desktop:** interceptar com `page.route` as respostas de geocoding e forecast. Cobrir um fluxo principal de sucesso, cidade ambígua, nenhum resultado, erro seguido de retry e troca C/F sem nova requisição. Incluir ao menos um cenário de resposta parcial.
+- **Playwright — viewport mobile:** executar o fluxo principal em viewport de 375 × 812 px e verificar busca, seleção, leitura dos cinco dias, troca de unidade, uso por teclado e ausência de rolagem horizontal (`scrollWidth <= clientWidth`). Validar também o layout em desktop de 1280 × 800 px.
+- **Determinismo e limites:** mocks tornam o CI independente da disponibilidade externa. Um smoke test real da Open-Meteo, se aprovado, deve ser separado dos testes bloqueantes e não enviar dados pessoais.
+- **Comandos de verificação:** `pnpm lint`, `pnpm build`, `pnpm test` e `pnpm test:e2e`. Playwright local não substitui monitoramento sintético, validação manual de leitor de tela nem medição de p95 em produção.
 
 ## Risks & Trade-offs
 
 | Risco ou trade-off | Consequência | Mitigação/decisão |
 |---|---|---|
-| Chamadas diretas do browser para um provedor externo | A disponibilidade e latência do app incluem a dependência; não há controle sobre o serviço. | Aceitar para MVP sem API key; monitorar geocoding e forecast separadamente. Confirmar se a meta de 99,5% continua aceitável sem fallback. |
-| Sem backend e sem persistência | Não há favoritos, histórico, cache entre sessões nem controle central de chamadas. | Manter o escopo mínimo; qualquer requisito futuro desses itens exige reavaliação da arquitetura. |
-| Limite de 8 s e dados de até 3 h são propostas | Thresholds podem não refletir o comportamento real do provedor ou a expectativa de produto. | Aprovar os valores com stakeholders e validar por métricas antes do lançamento. |
-| Timezone e calendário local | Mudanças de fuso/DST podem deslocar o agrupamento diário. | Usar timezone do forecast para todos os limites de data e cobrir casos DST nos testes. |
-| Cobertura de geocoding/códigos meteorológicos | Algumas cidades ou códigos podem não ter contexto/localização esperado. | Validar regiões-alvo; mapear códigos conhecidos e ter apresentação explícita para códigos desconhecidos. |
-| Escopo do workspace atual | `src/` e `tests/` não existem no workspace, apesar de estarem previstos pelas convenções e scripts. | Criar a estrutura-alvo na implementação; confirmar que o build/test discovery está configurado antes das tarefas de código. |
+| **API direta no navegador vs. backend/BFF** | A chamada direta simplifica deploy e não exige API key, mas acopla disponibilidade/latência ao provedor e não oferece cache ou fallback central. | Escolhida chamada direta para o MVP. Backend/BFF fica como alternativa se surgir necessidade de cache compartilhado, provedor alternativo, segredo ou controle de quota. |
+| **Hook local vs. estado global ou biblioteca de data fetching** | Estado local é simples para uma única tela, mas não oferece cache, deduplicação ou retry automático. | Escolhido `useWeather` com `fetch` e `AbortController`; considerar React Query/SWR apenas se múltiplas telas ou cache/revalidação forem requisitos aprovados. Redux/Context global não se justifica no escopo atual. |
+| **Celsius canônico vs. armazenar unidade convertida** | Guardar somente Celsius evita divergência entre unidades; o valor exibido depende de conversão e arredondamento na apresentação. | Escolhido Celsius canônico e conversão pura em renderização. Não fazer novo request nem armazenar os dois valores. |
+| **Forecast diário vs. horário** | O diário reduz volume e complexidade, mas não atende decisões que dependam de variação intradiária. | Diário escolhido para o MVP; hourly permanece fora de escopo até validação de necessidade. |
+| **Mocks no CI vs. chamadas reais em testes** | Mocks são estáveis e rápidos, mas não detectam sozinhos mudanças de contrato do provedor. | Usar mocks para testes bloqueantes; avaliar smoke test real separado, não bloqueante, com alerta para mudanças de contrato. |
+| **Sem persistência vs. salvar preferências localmente** | Não salvar cidade/unidade reduz retenção, mas a preferência volta a Celsius ao reabrir a página. | Não persistir no MVP; armazenamento local só após decisão explícita de produto/privacidade. |
+| **Metas operacionais propostas** | Timeout, freshness e disponibilidade podem não corresponder ao serviço ou à expectativa do público. | Aprovar e validar as metas com sondas/telemetria antes de tratá-las como SLO de produção. |
 
 **Decisões que bloqueiam o plano de tarefas:** aprovar canal e navegadores, regiões/idiomas prioritários, campos do MVP, thresholds NFR, termos/limites/atribuição do provedor e política de logs. O plano não presume aprovação dessas propostas.
